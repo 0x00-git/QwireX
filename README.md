@@ -34,7 +34,7 @@ insmod QwireX/binaries/qwirex.ko
 
 ## use: ##
 After installing qwirex, send a UDP packet using any method to the IP address of the PC running the module (within the local network) on port 1337, and don’t forget to check the payload—there should be a command there.
-# example: #
+## example: ##
 ```sh
 echo -n "reboot" | nc -u 127.0.0.1 1337
 ```
